@@ -9,16 +9,16 @@ import (
 )
 
 type PasswordPolicyPassword struct {
-	min      int
-	max      int
+	a        int
+	b        int
 	c        string
 	password string
 }
 
-func FindValidPasswordsCount(passwordPolicyPasswords []PasswordPolicyPassword) int {
+func FindValidPasswordsSchemeACount(passwordPolicyPasswords []PasswordPolicyPassword) int {
 	i := 0
 	for _, passwordPolicyPassword := range passwordPolicyPasswords {
-		if isPasswordValid(passwordPolicyPassword) {
+		if isPasswordSchemeAValid(passwordPolicyPassword) {
 			i++
 		}
 	}
@@ -26,11 +26,37 @@ func FindValidPasswordsCount(passwordPolicyPasswords []PasswordPolicyPassword) i
 	return i
 }
 
-func isPasswordValid(passwordPolicyPassword PasswordPolicyPassword) bool {
+func isPasswordSchemeAValid(passwordPolicyPassword PasswordPolicyPassword) bool {
 	regex := regexp.MustCompile(passwordPolicyPassword.c)
 	matches := regex.FindAllStringIndex(passwordPolicyPassword.password, -1)
 
-	return passwordPolicyPassword.min <= len(matches) && passwordPolicyPassword.max >= len(matches)
+	return passwordPolicyPassword.a <= len(matches) && passwordPolicyPassword.b >= len(matches)
+}
+
+func FindValidPasswordsSchemeBCount(passwordPolicyPasswords []PasswordPolicyPassword) int {
+	i := 0
+	for _, passwordPolicyPassword := range passwordPolicyPasswords {
+		if isPasswordSchemeBValid(passwordPolicyPassword) {
+			i++
+		}
+	}
+
+	return i
+}
+
+func isPasswordSchemeBValid(passwordPolicyPassword PasswordPolicyPassword) bool {
+	posAMatch := string(passwordPolicyPassword.password[passwordPolicyPassword.a-1]) == passwordPolicyPassword.c
+	posBMatch := string(passwordPolicyPassword.password[passwordPolicyPassword.b-1]) == passwordPolicyPassword.c
+
+	if posAMatch && posBMatch {
+		return false
+	}
+
+	if !posAMatch && !posBMatch {
+		return false
+	}
+
+	return true
 }
 
 func loadFile() []PasswordPolicyPassword {
@@ -68,5 +94,8 @@ func createPasswordPolicyPasswordFromString(s string) PasswordPolicyPassword {
 
 func main() {
 	passwordPolicyPasswords := loadFile()
-	fmt.Println(FindValidPasswordsCount(passwordPolicyPasswords))
+	fmt.Println("Scheme A")
+	fmt.Println(FindValidPasswordsSchemeACount(passwordPolicyPasswords))
+	fmt.Println("Scheme B")
+	fmt.Println(FindValidPasswordsSchemeBCount(passwordPolicyPasswords))
 }
