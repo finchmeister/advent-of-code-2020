@@ -12,6 +12,10 @@ func FindOuterBagCountPt1(allBags map[string]map[string]int) int {
 	return len(findParentBagCount("shiny gold", allBags, make(map[string]bool)))
 }
 
+func FindBagContainsPt2(allBags map[string]map[string]int) int {
+	return findChildBagCount("shiny gold", allBags)
+}
+
 func findParentBagCount(bagColour string, allBags map[string]map[string]int, bagsContaining map[string]bool) map[string]bool {
 	for parentBagColour, parentBagContents := range allBags {
 		for childBagColour, _ := range parentBagContents {
@@ -23,6 +27,18 @@ func findParentBagCount(bagColour string, allBags map[string]map[string]int, bag
 	}
 
 	return bagsContaining
+}
+
+func findChildBagCount(bagColour string, allBags map[string]map[string]int) int {
+	if len(allBags[bagColour]) == 0 {
+		return 0
+	}
+	sum := 0
+	for childBagColour, childBagContents := range allBags[bagColour] {
+		sum = sum + childBagContents + childBagContents*(findChildBagCount(childBagColour, allBags))
+	}
+
+	return sum
 }
 
 func parse(input string) map[string]map[string]int {
@@ -69,4 +85,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindOuterBagCountPt1(parseRows(parseInput(loadFile()))))
+	fmt.Println("Pt2")
+	fmt.Println(FindBagContainsPt2(parseRows(parseInput(loadFile()))))
 }
