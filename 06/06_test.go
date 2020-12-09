@@ -28,3 +28,12 @@ func TestFindSumOfGroupCountsPt1(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expected, got)
 	}
 }
+
+func TestFindSumOfGroupCountsPt2(t *testing.T) {
+	got := FindSumOfGroupCountsPt2(parse(testInput))
+	expected := 6
+
+	if got != expected {
+		t.Errorf("Expected %d, got %d", expected, got)
+	}
+}
