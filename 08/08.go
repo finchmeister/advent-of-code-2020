@@ -13,10 +13,45 @@ type Instruction struct {
 }
 
 func FindAccValuePt1(instructions []Instruction) int {
+	accumulator, _ := getAccumulator(instructions)
+	return accumulator
+}
+
+func FindAccValuePt2(instructions []Instruction) int {
+	modifiedInstructions := make([]Instruction, len(instructions))
+	for i, instruction := range instructions {
+		if instruction.kind == "jmp" || instruction.kind == "nop" {
+			copy(modifiedInstructions, instructions)
+			modifiedInstructions[i] = getReplacementInstruction(instruction)
+			accumulator, success := getAccumulator(modifiedInstructions)
+			if success {
+				return accumulator
+			}
+		}
+	}
+	panic("Solution not found")
+}
+
+func getReplacementInstruction(instruction Instruction) Instruction {
+	var newInstructionKind string
+	if instruction.kind == "jmp" {
+		newInstructionKind = "nop"
+	} else {
+		newInstructionKind = "jmp"
+	}
+
+	return Instruction{
+		newInstructionKind,
+		instruction.value,
+	}
+}
+
+// Returns accumulator and whether finished successfully
+func getAccumulator(instructions []Instruction) (int, bool) {
 	accumulator := 0
 	visited := make(map[int]bool)
 	i := 0
-	for visited[i] != true {
+	for visited[i] != true && i != len(instructions) {
 		visited[i] = true
 		if instructions[i].kind == "nop" {
 			i++
@@ -32,8 +67,11 @@ func FindAccValuePt1(instructions []Instruction) int {
 			continue
 		}
 	}
+	if i == len(instructions) {
+		return accumulator, true
+	}
 
-	return accumulator
+	return accumulator, false
 }
 
 func parse(input string) []Instruction {
@@ -70,4 +108,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindAccValuePt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindAccValuePt2(parse(loadFile())))
 }
