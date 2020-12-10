@@ -17,6 +17,19 @@ func FindFirstNoToNotFollowRulePt1(data []int, preambleLen int) int {
 	panic("Solution not found")
 }
 
+func FindMinMaxSumOfContiguousSetPt2(data []int, targetSum int) int {
+	for sliceLength := 2; sliceLength < len(data); sliceLength++ {
+		for startIndex := 0; startIndex <= (len(data) - sliceLength); startIndex++ {
+			targetSlice := data[startIndex : startIndex+sliceLength]
+			if sumsToValue(targetSlice, targetSum) == true {
+				return getMin(targetSlice) + getMax(targetSlice)
+			}
+		}
+	}
+
+	panic("Solution not found")
+}
+
 func canSumBeMade(data []int, expectedSum int) bool {
 	for i := range data {
 		for j := range data {
@@ -26,6 +39,37 @@ func canSumBeMade(data []int, expectedSum int) bool {
 		}
 	}
 	return false
+}
+
+func sumsToValue(data []int, value int) bool {
+	sum := 0
+	for _, v := range data {
+		sum = sum + v
+	}
+
+	return sum == value
+}
+
+func getMin(values []int) int {
+	min := values[0]
+	for _, v := range values {
+		if v < min {
+			min = v
+		}
+	}
+
+	return min
+}
+
+func getMax(values []int) int {
+	max := values[0]
+	for _, v := range values {
+		if v > max {
+			max = v
+		}
+	}
+
+	return max
 }
 
 func parse(input string) []int {
@@ -53,5 +97,8 @@ func loadFile() string {
 
 func main() {
 	fmt.Println("Pt1")
-	fmt.Println(FindFirstNoToNotFollowRulePt1(parse(loadFile()), 25))
+	pt1Solution := FindFirstNoToNotFollowRulePt1(parse(loadFile()), 25)
+	fmt.Println(pt1Solution)
+	fmt.Println("Pt2")
+	fmt.Println(FindMinMaxSumOfContiguousSetPt2(parse(loadFile()), pt1Solution))
 }
