@@ -9,8 +9,16 @@ import (
 )
 
 func FindStabilisingValuePt1(seatLayout [][]string) int {
+	return findStabilisingValue(seatLayout, getNextSeatPt1)
+}
+
+func FindStabilisingValuePt2(seatLayout [][]string) int {
+	return findStabilisingValue(seatLayout, getNextSeatPt2)
+}
+
+func findStabilisingValue(seatLayout [][]string, getNextSeat func(y int, x int, seatLayout [][]string) string) int {
 	for true {
-		nextLayout := getNextLayout(seatLayout)
+		nextLayout := getNextLayout(seatLayout, getNextSeat)
 		if isSeatLayoutEqual(seatLayout, nextLayout) {
 			break
 		}
@@ -20,7 +28,7 @@ func FindStabilisingValuePt1(seatLayout [][]string) int {
 	return countNoOfOccupiedSeats(seatLayout)
 }
 
-func getNextLayout(seatLayout [][]string) [][]string {
+func getNextLayout(seatLayout [][]string, getNextSeat func(y int, x int, seatLayout [][]string) string) [][]string {
 	nextLayout := makeNewLayout(seatLayout)
 	for y := range seatLayout {
 		for x := range seatLayout[y] {
@@ -56,7 +64,7 @@ func isSeatLayoutEqual(seatLayoutA [][]string, seatLayoutB [][]string) bool {
 	return reflect.DeepEqual(seatLayoutA, seatLayoutB)
 }
 
-func occupiedAdjacentCount(y int, x int, seatLayout [][]string) int {
+func occupiedAdjacentCountPt1(y int, x int, seatLayout [][]string) int {
 	y0 := int(math.Max(0, float64(y-1)))
 	yN := int(math.Min(float64(len(seatLayout)-1), float64(y+1)))
 	x0 := int(math.Max(0, float64(x-1)))
@@ -77,12 +85,12 @@ func occupiedAdjacentCount(y int, x int, seatLayout [][]string) int {
 	return occupiedCount
 }
 
-func getNextSeat(y int, x int, seatLayout [][]string) string {
+func getNextSeatPt1(y int, x int, seatLayout [][]string) string {
 	currentSeat := seatLayout[y][x]
 	if currentSeat == "." {
 		return "."
 	}
-	occupiedCount := occupiedAdjacentCount(y, x, seatLayout)
+	occupiedCount := occupiedAdjacentCountPt1(y, x, seatLayout)
 	if currentSeat == "L" && occupiedCount == 0 {
 		return "#"
 	}
@@ -91,6 +99,78 @@ func getNextSeat(y int, x int, seatLayout [][]string) string {
 	}
 
 	return currentSeat
+}
+
+type Dir struct {
+	y int
+	x int
+}
+
+func occupiedAdjacentCountPt2(y int, x int, seatLayout [][]string) int {
+	occupiedCount := 0
+	routes := getRoutes(y, x, seatLayout)
+	for _, route := range routes {
+		for _, dir := range route {
+			if seatLayout[dir.y][dir.x] == "L" {
+				break
+			}
+			if seatLayout[dir.y][dir.x] == "#" {
+				occupiedCount++
+				break
+			}
+		}
+	}
+
+	return occupiedCount
+}
+
+func getRoutes(y int, x int, seatLayout [][]string) [][]Dir {
+	dirs := []Dir{
+		{-1, -1},
+		{-1, 0},
+		{-1, 1},
+		{0, -1},
+		{0, 1},
+		{1, -1},
+		{1, 0},
+		{1, 1},
+	}
+
+	routes := make([][]Dir, len(dirs))
+	for i, dir := range dirs {
+		var route []Dir
+		for i := 1; y+i*dir.y < len(seatLayout) && y+i*dir.y >= 0 && x+i*dir.x < len(seatLayout[0]) && x+i*dir.x >= 0; i++ {
+			route = append(route, Dir{y + i*dir.y, x + i*dir.x})
+		}
+		routes[i] = route
+	}
+
+	return routes
+}
+
+func getNextSeatPt2(y int, x int, seatLayout [][]string) string {
+	currentSeat := seatLayout[y][x]
+	if currentSeat == "." {
+		return "."
+	}
+	occupiedCount := occupiedAdjacentCountPt2(y, x, seatLayout)
+	if currentSeat == "L" && occupiedCount == 0 {
+		return "#"
+	}
+	if currentSeat == "#" && occupiedCount >= 5 {
+		return "L"
+	}
+
+	return currentSeat
+}
+
+func seatLayoutToString(seatLayout [][]string) string {
+	stringSeatLayout := ""
+	for y := range seatLayout {
+		stringSeatLayout = stringSeatLayout + strings.Join(seatLayout[y], "") + "\n"
+	}
+
+	return stringSeatLayout
 }
 
 func parse(input string) [][]string {
@@ -119,4 +199,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindStabilisingValuePt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindStabilisingValuePt2(parse(loadFile())))
 }
