@@ -34,20 +34,95 @@ func FindManhattanDistancePt1(instructions []Instruction) int {
 	return Abs(position.n) + Abs(position.e)
 }
 
+func FindManhattanDistancePt2(instructions []Instruction) int {
+	wayPoint := Position{1, 10}
+	position := Position{0, 0}
+	for _, instruction := range instructions {
+		if instruction.action == "F" {
+			position = getNextPositionForwardMovePt2(position, wayPoint, instruction)
+			continue
+		}
+		if instruction.action == "L" || instruction.action == "R" {
+			wayPoint = getNextWaypointAfterRotation(wayPoint, instruction)
+			continue
+		}
+		wayPoint = getNextPositionCompassMove(wayPoint, instruction)
+	}
+
+	return Abs(position.n) + Abs(position.e)
+}
+
+func getNextPositionForwardMovePt2(position Position, waypoint Position, instruction Instruction) Position {
+	if instruction.action != "F" {
+		return position
+	}
+
+	return sumPosition(position, multiplyPosition(waypoint, instruction.value))
+}
+
+func multiplyPosition(position Position, x int) Position {
+	return Position{position.n * x, position.e * x}
+}
+
+func getNextWaypointAfterRotation(waypoint Position, instruction Instruction) Position {
+	if instruction.action != "L" && instruction.action != "R" {
+		return waypoint
+	}
+	if instruction.action == "L" {
+		instruction = convertToRInstruction(instruction)
+	}
+
+	return getWaypointAfterRRotation(waypoint, instruction)
+}
+
+func getWaypointAfterRRotation(waypoint Position, instruction Instruction) Position {
+	if instruction.action != "R" {
+		panic("Fed a bad instruction")
+	}
+
+	switch instruction.value {
+	case 90:
+		return Position{-1 * waypoint.e, waypoint.n}
+	case 180:
+		return Position{-1 * waypoint.n, -1 * waypoint.e}
+	case 270:
+		return Position{waypoint.e, -1 * waypoint.n}
+	default:
+		return waypoint
+	}
+}
+
+func convertToRInstruction(instruction Instruction) Instruction {
+	if instruction.action != "L" && instruction.action != "R" {
+		return instruction
+	}
+	cwRotations := []int{0, 90, 180, 270}
+	modifier := 1
+	if instruction.action == "L" {
+		modifier = -1
+	}
+	rotate := instruction.value / 90
+
+	return Instruction{"R", cwRotations[mod(modifier*rotate, len(compass))]}
+}
+
+func sumPosition(positionA Position, positionB Position) Position {
+	return Position{positionA.n + positionB.n, positionA.e + positionB.e}
+}
+
 func getNextPositionCompassMove(position Position, instruction Instruction) Position {
-	if instruction.action == "N" {
+	switch instruction.action {
+	case "N":
 		return Position{position.n + instruction.value, position.e}
-	}
-	if instruction.action == "S" {
-		return Position{position.n - instruction.value, position.e}
-	}
-	if instruction.action == "E" {
+	case "E":
 		return Position{position.n, position.e + instruction.value}
-	}
-	if instruction.action == "W" {
+	case "S":
+		return Position{position.n - instruction.value, position.e}
+	case "W":
 		return Position{position.n, position.e - instruction.value}
+	default:
+		return position
 	}
-	return position
 }
 
 func getNextPositionForwardMove(position Position, currentDir string, instruction Instruction) Position {
@@ -125,4 +200,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindManhattanDistancePt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindManhattanDistancePt2(parse(loadFile())))
 }

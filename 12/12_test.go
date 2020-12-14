@@ -18,3 +18,12 @@ func TestFindManhattanDistancePt1(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expected, got)
 	}
 }
+
+func TestFindManhattanDistancePt2(t *testing.T) {
+	got := FindManhattanDistancePt2(parse(testInput))
+	expected := 286
+
+	if got != expected {
+		t.Errorf("Expected %d, got %d", expected, got)
+	}
+}
