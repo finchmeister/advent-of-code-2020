@@ -13,9 +13,8 @@ type Range struct {
 }
 
 type Rule struct {
-	name   string
-	rangeA Range
-	rangeB Range
+	name         string
+	validEntries map[int]bool
 }
 
 type Notes struct {
@@ -25,7 +24,7 @@ type Notes struct {
 }
 
 func FindInvalidTicketScanningErrorRatePt1(notes Notes) int {
-	validEntries := getValidEntries(notes.rules)
+	validEntries := getAllValidEntries(notes.rules)
 	var invalidTicketEntries []int
 	for _, nearbyTicket := range notes.nearbyTickets {
 		for _, entry := range nearbyTicket {
@@ -38,6 +37,138 @@ func FindInvalidTicketScanningErrorRatePt1(notes Notes) int {
 	return getSum(invalidTicketEntries)
 }
 
+func FindMultipleOfDepartedPt2(notes Notes) int {
+	mapped := getRuleColumnMapping(notes)
+
+	var yourTicketDepartedValues []int
+	for ruleI, colI := range mapped {
+		if strings.HasPrefix(notes.rules[ruleI].name, "departure") {
+			yourTicketDepartedValues = append(yourTicketDepartedValues, notes.yourTicket[colI])
+		}
+	}
+
+	return getMultiple(yourTicketDepartedValues)
+}
+
+func getRuleColumnMapping(notes Notes) map[int]int {
+	bpGraph := getBPGraph(notes)
+	return findMatchingSolution(bpGraph)
+}
+
+// credit to https://www.geeksforgeeks.org/maximum-bipartite-matching/
+func findMatchingSolution(bpGraph [][]bool) map[int]int {
+	N := len(bpGraph)
+	M := len(bpGraph[0])
+	matchR := make(map[int]int, N)
+	for i := 0; i < N; i++ {
+		matchR[i] = -1
+	}
+
+	totalMatched := 0
+	for u := 0; u < M; u++ {
+		seen := make(map[int]bool, N)
+		for i := 0; i < N; i++ {
+			seen[i] = false
+		}
+
+		if bpm(bpGraph, u, seen, matchR) {
+			totalMatched++
+		}
+
+	}
+	if totalMatched != N {
+		panic("Solution not found")
+	}
+
+	return matchR
+}
+
+func bpm(bpGraph [][]bool, u int, seen map[int]bool, matchR map[int]int) bool {
+	for v := 0; v < len(bpGraph); v++ {
+		if bpGraph[u][v] && seen[v] == false {
+			seen[v] = true
+			if matchR[v] < 0 || bpm(bpGraph, matchR[v], seen, matchR) {
+				matchR[v] = u
+				return true
+			}
+
+		}
+	}
+	return false
+}
+
+func getBPGraph(notes Notes) [][]bool {
+	allTickets := append(getValidNearbyTickets(notes), notes.yourTicket)
+
+	var bpGraph [][]bool
+	for columnI := range allTickets[0] {
+		var rulesSatisfy []bool
+		for ruleI := range notes.rules {
+			value := false
+			if doesRuleSatisfyCol(notes.rules[ruleI], allTickets, columnI) {
+				value = true
+			}
+			rulesSatisfy = append(rulesSatisfy, value)
+		}
+		bpGraph = append(bpGraph, rulesSatisfy)
+	}
+
+	return bpGraph
+}
+
+func getMultiple(values []int) int {
+	x := 1
+	for _, i := range values {
+		x = x * i
+	}
+
+	return x
+}
+
+func getValidNearbyTickets(notes Notes) [][]int {
+	validEntries := getAllValidEntries(notes.rules)
+	var nearbyTickets [][]int
+	for _, nearbyTicket := range notes.nearbyTickets {
+		if isTicketValid(nearbyTicket, validEntries) {
+			nearbyTickets = append(nearbyTickets, nearbyTicket)
+		}
+	}
+
+	return nearbyTickets
+}
+
+func isTicketValid(nearbyTicket []int, validEntries map[int]bool) bool {
+	for _, entry := range nearbyTicket {
+		if validEntries[entry] != true {
+			return false
+		}
+	}
+
+	return true
+}
+
+func doesRuleSatisfyCol(rule Rule, nearbyTickets [][]int, x int) bool {
+	for y := range nearbyTickets {
+		if rule.validEntries[nearbyTickets[y][x]] != true {
+			//fmt.Printf("Rule: %v, fail for %v at %v, number not found: %v \n", rule.name, x, y, nearbyTickets[y][x])
+			return false
+		}
+	}
+
+	return true
+}
+
+func getAllValidEntries(rules []Rule) map[int]bool {
+	validEntries := make(map[int]bool)
+	for _, rule := range rules {
+		for validEntry := range rule.validEntries {
+			validEntries[validEntry] = true
+		}
+	}
+
+	return validEntries
+}
+
 func getSum(values []int) int {
 	x := 0
 	for _, i := range values {
@@ -45,20 +176,6 @@ func getSum(values []int) int {
 	}
 
 	return x
-}
-
-func getValidEntries(rules []Rule) map[int]bool {
-	validEntries := make(map[int]bool)
-	for _, rule := range rules {
-		for i := rule.rangeA.l; i <= rule.rangeA.u; i++ {
-			validEntries[i] = true
-		}
-		for i := rule.rangeB.l; i <= rule.rangeB.u; i++ {
-			validEntries[i] = true
-		}
-	}
-
-	return validEntries
 }
 
 func parse(input string) Notes {
@@ -105,14 +222,25 @@ func parseRules(input string) []Rule {
 
 		rule := Rule{
 			rawRules[0],
-			parseRange(rawRanges[0]),
-			parseRange(rawRanges[1]),
+			getRuleValidEntries(parseRange(rawRanges[0]), parseRange(rawRanges[1])),
 		}
 
 		rules = append(rules, rule)
 	}
 
 	return rules
+}
+
+func getRuleValidEntries(numberRangeA Range, numberRangeB Range) map[int]bool {
+	validEntries := make(map[int]bool)
+	for i := numberRangeA.l; i <= numberRangeA.u; i++ {
+		validEntries[i] = true
+	}
+	for i := numberRangeB.l; i <= numberRangeB.u; i++ {
+		validEntries[i] = true
+	}
+
+	return validEntries
 }
 
 func parseRange(input string) Range {
@@ -135,4 +263,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindInvalidTicketScanningErrorRatePt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindMultipleOfDepartedPt2(parse(loadFile())))
 }
