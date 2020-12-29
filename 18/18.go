@@ -10,13 +10,22 @@ import (
 func FindSumOfExpressionsPt1(expressions []string) int {
 	sum := 0
 	for _, expression := range expressions {
-		sum = sum + evaluateExpression(expression)
+		sum = sum + evaluateExpressionPt1(expression)
 	}
 
 	return sum
 }
 
-func evaluateExpression(expression string) int {
+func FindSumOfExpressionsPt2(expressions []string) int {
+	sum := 0
+	for _, expression := range expressions {
+		sum = sum + evaluateExpressionPt2(expression)
+	}
+
+	return sum
+}
+
+func evaluateExpressionPt1(expression string) int {
 	operator := "+"
 	result := 0
 
@@ -29,7 +38,7 @@ func evaluateExpression(expression string) int {
 		if isLeftParenthesis(v) {
 			result = computeValue(
 				result,
-				evaluateExpression(expression[i+1:]),
+				evaluateExpressionPt1(expression[i+1:]),
 				operator,
 			)
 
@@ -51,6 +60,90 @@ func evaluateExpression(expression string) int {
 	}
 
 	return result
+}
+
+func evaluateExpressionPt2(expression string) int {
+	return evaluateExpressionPt1(transformExpressionPt2(expression))
+}
+
+func transformExpressionPt2(expression string) string {
+	for i := 0; i < len(expression); i++ {
+		v := string(expression[i])
+		if isSpace(v) {
+			continue
+		}
+
+		if isAddition(v) {
+			expression = surroundWithParenthesis(expression, i)
+			i++
+		}
+	}
+
+	return expression
+}
+
+func surroundWithParenthesis(expression string, pos int) string {
+	// add left
+	for i := pos - 1; i >= 0; i-- {
+		v := string(expression[i])
+		if isSpace(v) {
+			continue
+		}
+
+		if isDigit(v) {
+			expression = insertIntoString(expression, "(", i)
+			pos++
+			break
+		}
+
+		if isRightParenthesis(v) {
+			insertPosition := getMatchingLeftParenthesisPosition(expression[:i])
+			expression = insertIntoString(
+				expression,
+				"(",
+				insertPosition,
+			)
+			pos++
+			break
+		}
+	}
+
+	// add right
+	for i := pos + 1; i < len(expression); i++ {
+		v := string(expression[i])
+		if isSpace(v) {
+			continue
+		}
+
+		if isDigit(v) {
+			expression = insertIntoString(expression, ")", i+1)
+			break
+		}
+
+		if isLeftParenthesis(v) {
+			insertPosition := i + getMatchingRightParenthesisPosition(expression[i+1:]) + 1
+			expression = insertIntoString(
+				expression,
+				")",
+				insertPosition,
+			)
+			pos++
+			break
+		}
+	}
+
+	return expression
+}
+
+func insertIntoString(subject string, value string, pos int) string {
+	if pos < 0 {
+		pos = 0
+	}
+	if pos > len(subject) {
+		pos = len(subject)
+	}
+
+	return subject[:pos] + value + subject[pos:]
 }
 
 func computeValue(a int, b int, operator string) int {
@@ -117,6 +210,25 @@ func getMatchingRightParenthesisPosition(expression string) int {
 	panic("Mismatched parenthesis")
 }
 
+// e.g., (2 * 3 => 0
+func getMatchingLeftParenthesisPosition(expression string) int {
+	parenthesisStack := 1
+	for i := len(expression) - 1; i >= 0; i-- {
+		v := string(expression[i])
+		if isRightParenthesis(v) {
+			parenthesisStack++
+		}
+		if isLeftParenthesis(v) {
+			if parenthesisStack == 1 {
+				return i
+			}
+			parenthesisStack--
+		}
+	}
+
+	panic("Mismatched parenthesis")
+}
+
 func parse(input string) []string {
 	return strings.Split(input, "\n")
 }
@@ -133,4 +245,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindSumOfExpressionsPt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindSumOfExpressionsPt2(parse(loadFile())))
 }
