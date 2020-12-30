@@ -13,15 +13,66 @@ type Input struct {
 }
 
 func FindMessageCountMatchRule0Pt1(input Input) int {
+	return getCountOfMatchingMessages(input.rules, input.messages)
+}
 
-	regex := "^" + convertRuleToRegex(input.rules, "0") + "$"
+func FindMessageCountMatchRule0Pt2(input Input) int {
+	var matchingMessages []string
+	// Solution obtained with 10, these values compute same answer
+	maxRecursionRule8 := 5
+	maxRecursionRule11 := 4
+	for i := 1; i < maxRecursionRule8; i++ {
+		input.rules["8"] = getRule8AfterNRecursion(i)
+		for j := 1; j < maxRecursionRule11; j++ {
+			input.rules["11"] = getRule11AfterNRecursion(j)
+			matchingMessages = append(
+				matchingMessages,
+				getMatchingMessages(input.rules, input.messages)...,
+			)
+		}
+	}
+
+	return getUniqueMessageCount(matchingMessages)
+}
+
+func getUniqueMessageCount(messages []string) int {
+	keys := make(map[string]bool)
+	uniqueMessages := 0
+	for _, entry := range messages {
+		if _, value := keys[entry]; !value {
+			keys[entry] = true
+			uniqueMessages++
+		}
+	}
+
+	return uniqueMessages
+}
+
+func getRule8AfterNRecursion(n int) string {
+	rule := "42 | 42"
+	for i := 0; i < n; i++ {
+		rule = rule + " 42"
+	}
+
+	return rule
+}
+
+func getRule11AfterNRecursion(n int) string {
+	return "42 31 |" + strings.Repeat(" 42", n+1) + strings.Repeat(" 31", n+1)
+}
+
+func getCountOfMatchingMessages(rules map[string]string, messages []string) int {
+	return len(getMatchingMessages(rules, messages))
+}
+
+func getMatchingMessages(rules map[string]string, messages []string) []string {
+	regex := "^" + convertRuleToRegex(rules, "0") + "$"
 	r := regexp.MustCompile(regex)
-
-	matchingMessages := 0
-	for _, message := range input.messages {
+	var matchingMessages []string
+	for _, message := range messages {
 		matches := r.FindStringSubmatch(message)
 		if len(matches) != 0 {
-			matchingMessages++
+			matchingMessages = append(matchingMessages, message)
 		}
 	}
 
@@ -81,4 +132,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindMessageCountMatchRule0Pt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindMessageCountMatchRule0Pt2(parse(loadFile())))
 }
