@@ -29,6 +29,139 @@ func FindCornerIdsMultipliedPt1(tiles []Tile) int {
 	return getCornerValuesMultiplied(solvePuzzle(tiles))
 }
 
+func FindSeaMonstersWaterRoughnessPt2(tiles []Tile) int {
+	solvedPuzzle := solvePuzzle(tiles)
+
+	minY, maxY, minX, maxX := getSolvedPuzzleMinMaxXY(solvedPuzzle)
+
+	var puzzleWithoutBorders [][][][]string
+
+	for y := maxY; y >= minY; y-- {
+		var puzzleWithoutBordersX [][][]string
+		for x := minX; x <= maxX; x++ {
+			puzzleWithoutBordersX = append(puzzleWithoutBordersX, removeBorder(solvedPuzzle[y][x].tile))
+		}
+		puzzleWithoutBorders = append(puzzleWithoutBorders, puzzleWithoutBordersX)
+	}
+
+	var image [][]string
+	for y := range puzzleWithoutBorders {
+
+		for tileY := range puzzleWithoutBorders[y][0] {
+			var imageX []string
+			for x := range puzzleWithoutBorders[y] {
+				imageX = append(imageX, puzzleWithoutBorders[y][x][tileY]...)
+			}
+			image = append(image, imageX)
+		}
+	}
+
+	for i := 0; i < 2; i++ {
+		if i == 1 {
+			image = flipVertically(image)
+		}
+		for j := 0; j < 4; j++ {
+			image = rotate90CW(image)
+
+			found := false
+			for _, coord := range getSeaMonsterCoords(image) {
+				image = updateImageWithSeaMonster(coord[0], coord[1], image)
+				//fmt.Println(imageToString(image))
+				found = true
+			}
+
+			if found {
+				return getTotalWaterRoughness(image)
+			}
+		}
+	}
+
+	panic("Solution not found")
+}
+
+func imageToString(image [][]string) string {
+	imageAsString := ""
+	for y := range image {
+		imageAsString = imageAsString + strings.Join(image[y], "") + "\n"
+	}
+
+	return imageAsString
+}
+
+func getTotalWaterRoughness(image [][]string) int {
+	totalWaterRoughness := 0
+	for y := range image {
+		for x := range image[y] {
+			if image[y][x] == "#" {
+				totalWaterRoughness++
+			}
+		}
+	}
+
+	return totalWaterRoughness
+}
+
+func updateImageWithSeaMonster(x int, y int, image [][]string) [][]string {
+	image[y+1][x+0] = "O"
+	image[y+2][x+1] = "O"
+	image[y+2][x+4] = "O"
+	image[y+1][x+5] = "O"
+	image[y+1][x+6] = "O"
+	image[y+2][x+7] = "O"
+	image[y+2][x+10] = "O"
+	image[y+1][x+11] = "O"
+	image[y+1][x+12] = "O"
+	image[y+2][x+13] = "O"
+	image[y+2][x+16] = "O"
+	image[y+1][x+17] = "O"
+	image[y+1][x+18] = "O"
+	image[y+0][x+18] = "O"
+	image[y+1][x+19] = "O"
+
+	return image
+}
+
+func getSeaMonsterCoords(image [][]string) [][]int {
+	var seaMonsterCoords [][]int
+	for y := 0; y < len(image)-2; y++ {
+		for x := 0; x < len(image[0])-19; x++ {
+			if containsSeaMonster(x, y, image) {
+				seaMonsterCoords = append(seaMonsterCoords, []int{x, y})
+			}
+		}
+
+	}
+	return seaMonsterCoords
+}
+
+func containsSeaMonster(x int, y int, image [][]string) bool {
+	return image[y+1][x+0] == "#" &&
+		image[y+2][x+1] == "#" &&
+		image[y+2][x+4] == "#" &&
+		image[y+1][x+5] == "#" &&
+		image[y+1][x+6] == "#" &&
+		image[y+2][x+7] == "#" &&
+		image[y+2][x+10] == "#" &&
+		image[y+1][x+11] == "#" &&
+		image[y+1][x+12] == "#" &&
+		image[y+2][x+13] == "#" &&
+		image[y+2][x+16] == "#" &&
+		image[y+1][x+17] == "#" &&
+		image[y+1][x+18] == "#" &&
+		image[y+0][x+18] == "#" &&
+		image[y+1][x+19] == "#"
+}
+
+func removeBorder(tile [][]string) [][]string {
+	var borderRemoved [][]string
+
+	for y := 1; y < len(tile)-1; y++ {
+		borderRemoved = append(borderRemoved, tile[y][1:len(tile[y])-1])
+	}
+
+	return borderRemoved
+}
+
 func solvePuzzle(tiles []Tile) map[int]map[int]Tile {
 	solvedPuzzle := make(map[int]map[int]Tile)
 	var tilesToCheck []Tile
@@ -73,10 +206,8 @@ func solvePuzzle(tiles []Tile) map[int]map[int]Tile {
 }
 
 func getCornerValuesMultiplied(solvedPuzzle map[int]map[int]Tile) int {
-	minY := 0
-	maxY := 0
-	minX := 0
-	maxX := 0
+	minY, maxY, minX, maxX := getSolvedPuzzleMinMaxXY(solvedPuzzle)
+
 	for y := range solvedPuzzle {
 		if y < minY {
 			minY = y
@@ -98,6 +229,31 @@ func getCornerValuesMultiplied(solvedPuzzle map[int]map[int]Tile) int {
 		solvedPuzzle[minY][maxX].number *
 		solvedPuzzle[maxY][minX].number *
 		solvedPuzzle[maxY][maxX].number
+}
+
+func getSolvedPuzzleMinMaxXY(solvedPuzzle map[int]map[int]Tile) (int, int, int, int) {
+	minY := 0
+	maxY := 0
+	minX := 0
+	maxX := 0
+	for y := range solvedPuzzle {
+		if y < minY {
+			minY = y
+		}
+		if y > maxY {
+			maxY = y
+		}
+	}
+	for x := range solvedPuzzle[0] {
+		if x < minX {
+			minX = x
+		}
+		if x > maxX {
+			maxX = x
+		}
+	}
+
+	return minY, maxY, minX, maxX
 }
 
 func getTileXY(solvedPuzzle map[int]map[int]Tile, tile Tile) (int, int) {
@@ -178,37 +334,45 @@ func getEdge(side Side, tile Tile) []string {
 }
 
 func flipTileVertically(tile Tile) Tile {
-	var flippedTile [][]string
-
-	for y := range tile.tile {
-		var flippedTileRow []string
-		for x := len(tile.tile[0]) - 1; x >= 0; x-- {
-			flippedTileRow = append(flippedTileRow, tile.tile[y][x])
-		}
-		flippedTile = append(flippedTile, flippedTileRow)
-	}
-
 	return Tile{
-		flippedTile,
+		flipVertically(tile.tile),
 		tile.number,
 	}
 }
 
-func rotateTile90CW(tile Tile) Tile {
-	var flippedTile [][]string
+func flipVertically(s [][]string) [][]string {
+	var flippedS [][]string
 
-	for y := range tile.tile {
-		var flippedTileRow []string
-		for x := len(tile.tile[0]) - 1; x >= 0; x-- {
-			flippedTileRow = append(flippedTileRow, tile.tile[x][y])
+	for y := range s {
+		var flippedRow []string
+		for x := len(s[0]) - 1; x >= 0; x-- {
+			flippedRow = append(flippedRow, s[y][x])
 		}
-		flippedTile = append(flippedTile, flippedTileRow)
+		flippedS = append(flippedS, flippedRow)
 	}
 
+	return flippedS
+}
+
+func rotateTile90CW(tile Tile) Tile {
 	return Tile{
-		flippedTile,
+		rotate90CW(tile.tile),
 		tile.number,
 	}
+}
+
+func rotate90CW(s [][]string) [][]string {
+	var rotatedS [][]string
+
+	for y := range s {
+		var rotatedRow []string
+		for x := len(s[0]) - 1; x >= 0; x-- {
+			rotatedRow = append(rotatedRow, s[x][y])
+		}
+		rotatedS = append(rotatedS, rotatedRow)
+	}
+
+	return rotatedS
 }
 
 func parse(input string) []Tile {
@@ -251,4 +415,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindCornerIdsMultipliedPt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindSeaMonstersWaterRoughnessPt2(parse(loadFile())))
 }

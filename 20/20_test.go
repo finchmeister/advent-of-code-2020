@@ -120,3 +120,21 @@ func TestFindCornerIdsMultipliedPt1(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expected, got)
 	}
 }
+
+func TestFindSeaMonstersWaterRoughnessPt2(t *testing.T) {
+	got := FindSeaMonstersWaterRoughnessPt2(parse(testInput))
+	expected := 273
+
+	if got != expected {
+		t.Errorf("Expected %d, got %d", expected, got)
+	}
+}
+
+func TestFindSeaMonstersWaterRoughnessPt2A(t *testing.T) {
+	got := FindSeaMonstersWaterRoughnessPt2(parse(loadFile()))
+	expected := 2304
+
+	if got != expected {
+		t.Errorf("Expected %d, got %d", expected, got)
+	}
+}
