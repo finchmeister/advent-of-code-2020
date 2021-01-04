@@ -26,3 +26,12 @@ func TestFindWinningPlayersScorePt1(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expected, got)
 	}
 }
+
+func TestFindWinningPlayersScorePt2(t *testing.T) {
+	got := FindWinningPlayersScorePt2(parse(testInput))
+	expected := 291
+
+	if got != expected {
+		t.Errorf("Expected %d, got %d", expected, got)
+	}
+}
