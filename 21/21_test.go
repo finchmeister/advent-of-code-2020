@@ -17,3 +17,12 @@ func TestFindCountOfIngredientsWithNoAllergensPt1(t *testing.T) {
 		t.Errorf("Expected %d, got %d", expected, got)
 	}
 }
+
+func TestFindCanonicalDangerousIngredientsListPt2(t *testing.T) {
+	got := FindCanonicalDangerousIngredientsListPt2(parse(testInput))
+	expected := "mxmxvkd,sqjhc,fvjkl"
+
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}

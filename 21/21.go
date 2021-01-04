@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 )
 
@@ -25,19 +26,19 @@ func FindCountOfIngredientsWithNoAllergensPt1(foods []Food) int {
 		}
 	}
 
-	var mustContainAllergen []string
+	var ingredientsMustContainAllergen []string
 	for allergen := range allergenIngredientsMap {
 		for _, testIngredient := range allergenIngredientsMap[allergen][0] {
 			if doAllFoodsIngredientsContainIngredient(allergenIngredientsMap[allergen], testIngredient) {
-				if contains(testIngredient, mustContainAllergen) == false {
-					mustContainAllergen = append(mustContainAllergen, testIngredient)
+				if contains(testIngredient, ingredientsMustContainAllergen) == false {
+					ingredientsMustContainAllergen = append(ingredientsMustContainAllergen, testIngredient)
 				}
 			}
 		}
 	}
 
 	allIngredients := getAllIngredients(foods)
-	ingredientsNotContainingAllergens := findIngredientsNotContainingAllergens(allIngredients, mustContainAllergen)
+	ingredientsNotContainingAllergens := findIngredientsNotContainingAllergens(allIngredients, ingredientsMustContainAllergen)
 
 	totalIngredientsNotContainingAllergensCount := 0
 	for _, ingredientNotContainingAllergens := range ingredientsNotContainingAllergens {
@@ -45,6 +46,79 @@ func FindCountOfIngredientsWithNoAllergensPt1(foods []Food) int {
 	}
 
 	return totalIngredientsNotContainingAllergensCount
+}
+
+func FindCanonicalDangerousIngredientsListPt2(foods []Food) string {
+
+	allergenIngredientsMap := make(map[string][][]string)
+
+	for _, food := range foods {
+		for _, allergen := range food.allergens {
+			if allergenIngredientsMap[allergen] == nil {
+				allergenIngredientsMap[allergen] = [][]string{food.ingredients}
+			} else {
+				allergenIngredientsMap[allergen] = append(allergenIngredientsMap[allergen], food.ingredients)
+			}
+		}
+	}
+
+	allergenMustBeIngredientMap := make(map[string][]string)
+	for allergen := range allergenIngredientsMap {
+		for _, testIngredient := range allergenIngredientsMap[allergen][0] {
+			if doAllFoodsIngredientsContainIngredient(allergenIngredientsMap[allergen], testIngredient) {
+				if contains(testIngredient, allergenMustBeIngredientMap[allergen]) == false {
+					allergenMustBeIngredientMap[allergen] = append(allergenMustBeIngredientMap[allergen], testIngredient)
+				}
+			}
+		}
+	}
+
+	allergenIngredientMap := make(map[string]string)
+
+	for len(allergenMustBeIngredientMap) > 0 {
+		for allergen := range allergenMustBeIngredientMap {
+			if len(allergenMustBeIngredientMap[allergen]) == 1 {
+				ingredient := allergenMustBeIngredientMap[allergen][0]
+				allergenIngredientMap[allergen] = ingredient
+
+				allergenMustBeIngredientMap = removeIngredientFromAllergenMustBeIngredientMap(ingredient, allergenMustBeIngredientMap)
+			}
+		}
+	}
+
+	var allergens []string
+	for allergen := range allergenIngredientMap {
+		allergens = append(allergens, allergen)
+	}
+
+	sort.Strings(allergens)
+
+	var dangerousIngredients []string
+	for _, allergen := range allergens {
+		dangerousIngredients = append(dangerousIngredients, allergenIngredientMap[allergen])
+	}
+
+	return strings.Join(dangerousIngredients, ",")
+}
+
+func removeIngredientFromAllergenMustBeIngredientMap(ingredient string, allergenMustBeIngredientMap map[string][]string) map[string][]string {
+	for allergen := range allergenMustBeIngredientMap {
+		allergenMustBeIngredientMap[allergen] = removeFromSlice(allergenMustBeIngredientMap[allergen], ingredient)
+		if len(allergenMustBeIngredientMap[allergen]) == 0 {
+			delete(allergenMustBeIngredientMap, allergen)
+		}
+	}
+
+	return allergenMustBeIngredientMap
+}
+
+func removeFromSlice(s []string, remove string) []string {
+	for i := range s {
+		if s[i] == remove {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
 }
 
 func getIngredientOccurrenceCount(foods []Food, ingredient string) int {
@@ -135,4 +209,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindCountOfIngredientsWithNoAllergensPt1(parse(loadFile())))
+	fmt.Println("Pt2")
+	fmt.Println(FindCanonicalDangerousIngredientsListPt2(parse(loadFile())))
 }
