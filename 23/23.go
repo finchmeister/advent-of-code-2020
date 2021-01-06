@@ -7,80 +7,60 @@ import (
 	"strings"
 )
 
+const TenMillion = 10000000
+const OneMillion = 1000000
+
 func FindLabelsOnCupsAfter1Pt1(cupLabelling []int, noOfMoves int) string {
+	return getLabelsOrderedAfterOne(playGame(cupLabelling, noOfMoves))
+}
+
+func FindMultipleOfLabelsAfterCup1Pt2(cupLabelling []int, noOfMoves int) int {
+	cupLabelling = updateCupLabellingPt2(cupLabelling, OneMillion)
+
+	cupLabellingLinkedList := playGame(cupLabelling, noOfMoves)
+
+	return cupLabellingLinkedList[1] * cupLabellingLinkedList[cupLabellingLinkedList[1]]
+}
+
+func updateCupLabellingPt2(cupLabelling []int, size int) []int {
+	newCupLabelling := make([]int, len(cupLabelling))
+	copy(newCupLabelling, cupLabelling)
+
+	for i := len(cupLabelling) + 1; i <= size; i++ {
+		newCupLabelling = append(newCupLabelling, i)
+	}
+
+	return newCupLabelling
+}
+
+func playGame(cupLabelling []int, noOfMoves int) map[int]int {
+	cupLabellingLinkedList := makeCupLabellingLinkedList(cupLabelling)
+
 	currentCup := cupLabelling[0]
 	for i := 0; i < noOfMoves; i++ {
 		var pickedUpCups []int
 		nextCup := currentCup
 		for j := 0; j < 3; j++ {
-			nextCup = getNextCup(nextCup, cupLabelling)
+			nextCup = cupLabellingLinkedList[nextCup]
 			pickedUpCups = append(pickedUpCups, nextCup)
 		}
+		nextCup = cupLabellingLinkedList[nextCup]
 
-		destinationCup := getDestinationCup(currentCup, cupLabelling, pickedUpCups)
+		destinationCup := getDestinationCup(currentCup, cupLabellingLinkedList, pickedUpCups)
+		cupLabellingLinkedList[currentCup] = nextCup
 
-		cupLabelling = removeCups(pickedUpCups, cupLabelling)
-		cupLabelling = addCupsAfterDestination(pickedUpCups, cupLabelling, destinationCup)
+		pickedUpCupsNextCup := cupLabellingLinkedList[destinationCup]
+		cupLabellingLinkedList[destinationCup] = pickedUpCups[0]
+		cupLabellingLinkedList[pickedUpCups[2]] = pickedUpCupsNextCup
 
-		currentCup = getNextCup(currentCup, cupLabelling)
+		currentCup = nextCup
 	}
 
-	return getLabelsOrderedAfterOne(cupLabelling)
+	return cupLabellingLinkedList
 }
 
-func getLabelsOrderedAfterOne(cupLabelling []int) string {
-	var orderedAfterOne []string
-	cup := 1
-	for getNextCup(cup, cupLabelling) != 1 {
-		cup = getNextCup(cup, cupLabelling)
-		orderedAfterOne = append(orderedAfterOne, strconv.Itoa(cup))
-	}
-
-	return strings.Join(orderedAfterOne, "")
-}
-
-func removeCups(cupsToRemove, cupLabelling []int) []int {
-	var newCupLabelling []int
-	for _, cup := range cupLabelling {
-		if contains(cup, cupsToRemove) == false {
-			newCupLabelling = append(newCupLabelling, cup)
-		}
-	}
-
-	return newCupLabelling
-}
-
-func addCupsAfterDestination(cupsToAdd, cupLabelling []int, destination int) []int {
-	var newCupLabelling []int
-	indexToInsert := getCupIndex(destination, cupLabelling)
-
-	newCupLabelling = append(cupLabelling[:indexToInsert+1], append(cupsToAdd, cupLabelling[indexToInsert+1:]...)...)
-
-	return newCupLabelling
-}
-
-func getNextCup(currentCup int, cupLabelling []int) int {
-	for i := range cupLabelling {
-		if currentCup == cupLabelling[i] {
-			key := mod(i+1, len(cupLabelling))
-			return cupLabelling[key]
-		}
-	}
-	panic("Cup not found")
-}
-
-func getCupIndex(cup int, cupLabelling []int) int {
-	for i := range cupLabelling {
-		if cupLabelling[i] == cup {
-			return i
-		}
-	}
-
-	panic("Cup not found")
-}
-
-func getDestinationCup(currentCup int, cupLabelling []int, pickedUpCups []int) int {
-	modulo := getMax(cupLabelling)
+func getDestinationCup(currentCup int, cupLabellingLinkedList map[int]int, pickedUpCups []int) int {
+	modulo := len(cupLabellingLinkedList)
 	destinationCup := subtractWithWrap(currentCup, 1, modulo)
 
 	for contains(destinationCup, pickedUpCups) {
@@ -90,11 +70,39 @@ func getDestinationCup(currentCup int, cupLabelling []int, pickedUpCups []int) i
 	return destinationCup
 }
 
+func makeCupLabellingLinkedList(cupLabelling []int) map[int]int {
+	cupLabellingLinkedList := make(map[int]int, len(cupLabelling))
+
+	for i := range cupLabelling {
+		nextI := subtractWithNoWrap(i, -1, len(cupLabelling))
+		cupLabellingLinkedList[cupLabelling[i]] = cupLabelling[nextI]
+	}
+
+	return cupLabellingLinkedList
+}
+
+func getLabelsOrderedAfterOne(cupLabellingLinkedList map[int]int) string {
+	var orderedAfterOne []string
+	cup := 1
+	for cupLabellingLinkedList[cup] != 1 {
+		cup = cupLabellingLinkedList[cup]
+		orderedAfterOne = append(orderedAfterOne, strconv.Itoa(cup))
+	}
+
+	return strings.Join(orderedAfterOne, "")
+}
+
 func subtractWithWrap(a, b int, modulo int) int {
 	x := mod(a-b, modulo)
 	if x == 0 {
 		return modulo
 	}
+
+	return x
+}
+
+func subtractWithNoWrap(a, b int, modulo int) int {
+	x := mod(a-b, modulo)
 
 	return x
 }
@@ -111,17 +119,6 @@ func contains(value int, slice []int) bool {
 	}
 
 	return false
-}
-
-func getMax(values []int) int {
-	max := values[0]
-	for _, v := range values {
-		if v > max {
-			max = v
-		}
-	}
-
-	return max
 }
 
 func parse(input string) []int {
@@ -146,4 +143,6 @@ func loadFile() string {
 func main() {
 	fmt.Println("Pt1")
 	fmt.Println(FindLabelsOnCupsAfter1Pt1(parse(loadFile()), 100))
+	fmt.Println("Pt2")
+	fmt.Println(FindMultipleOfLabelsAfterCup1Pt2(parse(loadFile()), TenMillion))
 }

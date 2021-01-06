@@ -23,3 +23,12 @@ func TestFindLabelsOnCupsAfter1Pt1OneHundredMoves(t *testing.T) {
 		t.Errorf("Expected %v, got %v", expected, got)
 	}
 }
+
+func TestFindMultipleOfLabelsAfterCup1Pt2(t *testing.T) {
+	got := FindMultipleOfLabelsAfterCup1Pt2(parse(testInput), TenMillion)
+	expected := 149245887792
+
+	if got != expected {
+		t.Errorf("Expected %v, got %v", expected, got)
+	}
+}
